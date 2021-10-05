@@ -11,7 +11,7 @@ contract CampaignBalance is Ownable {
     
     string projectName;
     //variable for projectstarter (EOA projectstarter)
-    address projectStarter;
+    address payable projectStarter;
     //starttime of fundingperiod (is this necessary?)
     uint256 fundingStartTime;
     //endtime of fundingperiod
@@ -26,15 +26,12 @@ contract CampaignBalance is Ownable {
     uint256 projectEndTime;
     //is the project initialized succesful?
     bool isInitialized;
-    //amount of refund
-    uint256 returnAmount;
-    //amount that is funded
-    uint256 fundAmount;
-
+    //address of supporter
+    address payable public supporter;
 
 
     //put owner in constructor to use for initializing project
-    constructor() public Ownable() {
+    constructor() public {
         isInitialized == false;
     }
 
@@ -44,7 +41,7 @@ contract CampaignBalance is Ownable {
     //function to initialize project, only for Supahero.
     function Initialize(
         string calldata _projectName,
-        address _projectStarter,
+        address payable _projectStarter,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _projectEndTime
@@ -63,11 +60,11 @@ contract CampaignBalance is Ownable {
 
     //more require necessary?
 
-    function deposit(uint256 amount) public {
+    function deposit(uint256 amount) public payable{
         require(fundingEndTime > block.timestamp, "Funding ended");
         require(currentBalance + amount < fundTarget, "amount higher than fund target");
 
-        userDeposit[msg.sender] = userDeposit[msg.sender] += amount;
+        userDeposit[supporter] = userDeposit[supporter] += amount;
         currentBalance = currentBalance += amount;
     }
 
@@ -87,30 +84,26 @@ contract CampaignBalance is Ownable {
         Target = fundTarget;
         Balance = currentBalance;
     }
-    
+
     //How to see these variables when calling function?
 
     //function for returning the funds
-    function returnFunds() public {
-        require(userDeposit[msg.sender] > 0);
+    function withdrawFunds(uint amount) public returns(bool success) {   
+        require(userDeposit[supporter] >= amount);// guards up front
+        userDeposit[supporter] -= amount;         // optimistic accounting
+        supporter.transfer(amount);            // transfer
+        return true;
+        }
+ 
 
-        uint256 returnAmount = currentBalance[msg.sender];
-        currentBalance[msg.sender] = 0;
-
-        (bool sent, bytes memory data) = msg.sender.transfer{value: returnAmount}("");
-        require(sent, "Failed to withdraw");
-    }
-
-    function payOut() public {
+    function payOut(uint amount) public returns(bool success) {
         require(msg.sender == projectStarter);
         require(fundingEndTime < block.timestamp);
         
-        uint256 fundAmount = currentBalance;
+        uint fundAmount = currentBalance;
         currentBalance = 0;
-        (bool sent, bytes memory data) = msg.sender.transfer{value: fundAmount}("");
-        require(sent, "Failed to withdraw");
-
-
+        projectStarter.transfer(amount);
+        return true;
     }
 
 
