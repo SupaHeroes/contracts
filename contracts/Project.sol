@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import "OpenZeppelin/openzeppelin-contracts@4.3.0/contracts/access/Ownable.sol";
 
 //contract template for initiating a project
-contract CampaignBalance is Ownable {
+contract Project is Ownable {
     mapping(address => uint256) public userDeposit;
     //variable for projectname
 
@@ -29,25 +29,14 @@ contract CampaignBalance is Ownable {
     //address of supporter
     address payable public supporter;
 
-
     //put owner in constructor to use for initializing project
-    constructor() public {
-        isInitialized == false;
-    }
-
-    //q: correct use of constructor?
-    //q: double use of setting owner?
-
-    //function to initialize project, only for Supahero.
-    function Initialize(
-        string calldata _projectName,
-        address payable _projectStarter,
-        uint256 _fundingEndTime,
-        uint256 _fundTarget,
+    constructor(
+        string memory _projectName, 
+        address payable _projectStarter, 
+        uint256 _fundingEndTime, 
+        uint256 _fundTarget, 
         uint256 _projectEndTime
-    ) public onlyOwner returns (bool) {
-        require(isInitialized == false, "already initialized");
-        require(_fundingEndTime > block.timestamp, "block height must be greater than current block");
+        ) {
 
         projectName = _projectName;
         projectStarter = _projectStarter;
@@ -55,17 +44,19 @@ contract CampaignBalance is Ownable {
         fundTarget = _fundTarget;
         projectEndTime = _projectEndTime;
         isInitialized = true;
-        return true;
+        
     }
 
-    //more require necessary?
+    //q: correct use of constructor?
+    //q: double use of setting owner?
+
 
     function deposit(uint256 amount) public payable{
         require(fundingEndTime > block.timestamp, "Funding ended");
         require(currentBalance + amount < fundTarget, "amount higher than fund target");
 
-        userDeposit[supporter] = userDeposit[supporter] += amount;
-        currentBalance = currentBalance += amount;
+        userDeposit[supporter] += amount;
+        currentBalance += amount;
     }
 
     //q: how to make storage of amounts that have been deposited before, to see if amount is greater than fundTarget - previous deposits
@@ -79,11 +70,13 @@ contract CampaignBalance is Ownable {
 
     //q: proper use of block.timestamp?
 
-    function detailsProject() public view returns (string memory Name, string memory Starter, uint256 Target, uint256 Balance){
+    function detailsProject() public view returns (string memory Name,  address Starter, uint256 Target, uint256 Balance){
         Name = projectName;
+        Starter = projectStarter;
         Target = fundTarget;
         Balance = currentBalance;
-    }
+        return (Name, Starter, Target, Balance);
+    } 
 
     //How to see these variables when calling function?
 
