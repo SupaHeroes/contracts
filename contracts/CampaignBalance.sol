@@ -10,8 +10,6 @@ contract CampaignBalance is Ownable {
 
     
     string projectName;
-    //variable for projectstarter (EOA projectstarter)
-    address payable projectStarter;
     //starttime of fundingperiod (is this necessary?)
     uint256 fundingStartTime;
     //endtime of fundingperiod
@@ -28,6 +26,8 @@ contract CampaignBalance is Ownable {
     bool isInitialized;
     //address of supporter
     address payable public supporter;
+    //is the project stopped?
+    bool isStopped;
 
 
     //put owner in constructor to use for initializing project
@@ -64,8 +64,8 @@ contract CampaignBalance is Ownable {
         require(fundingEndTime > block.timestamp, "Funding ended");
         require(currentBalance + amount < fundTarget, "amount higher than fund target");
 
-        userDeposit[supporter] = userDeposit[supporter] += amount;
-        currentBalance = currentBalance += amount;
+        userDeposit[supporter] += amount;
+        currentBalance += amount;
     }
 
     //q: how to make storage of amounts that have been deposited before, to see if amount is greater than fundTarget - previous deposits
@@ -75,6 +75,7 @@ contract CampaignBalance is Ownable {
     function stopProject() public onlyOwner {
         fundingEndTime = block.timestamp;
         projectEndTime = block.timestamp;
+        isStopped = true;
     }
 
     //q: proper use of block.timestamp?
@@ -83,12 +84,14 @@ contract CampaignBalance is Ownable {
         Name = projectName;
         Target = fundTarget;
         Balance = currentBalance;
+        return (Name, Target, Balance);
     }
 
     //How to see these variables when calling function?
 
     //function for returning the funds
-    function withdrawFunds(uint amount) public returns(bool success) {   
+    function withdrawFunds(uint amount) public returns(bool success) { 
+        require(isStopped) // supporters can withdraw if funding stopped
         require(userDeposit[supporter] >= amount);// guards up front
         userDeposit[supporter] -= amount;         // optimistic accounting
         supporter.transfer(amount);            // transfer
@@ -99,6 +102,7 @@ contract CampaignBalance is Ownable {
     function payOut(uint amount) public returns(bool success) {
         require(msg.sender == projectStarter);
         require(fundingEndTime < block.timestamp);
+        require(!isStopped);
         
         uint fundAmount = currentBalance;
         currentBalance = 0;
