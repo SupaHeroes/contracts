@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "OpenZeppelin/openzeppelin-contracts@4.3.0/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 
 //contract template for initiating a project
 contract CampaignBalance is Ownable {
@@ -41,7 +41,6 @@ contract CampaignBalance is Ownable {
     //function to initialize project, only for Supahero.
     function Initialize(
         string calldata _projectName,
-        address payable _projectStarter,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _projectEndTime
@@ -50,7 +49,6 @@ contract CampaignBalance is Ownable {
         require(_fundingEndTime > block.timestamp, "block height must be greater than current block");
 
         projectName = _projectName;
-        projectStarter = _projectStarter;
         fundingEndTime = _fundingEndTime;
         fundTarget = _fundTarget;
         projectEndTime = _projectEndTime;
@@ -80,18 +78,19 @@ contract CampaignBalance is Ownable {
 
     //q: proper use of block.timestamp?
 
-    function detailsProject() public view returns (string memory Name, string memory Starter, uint256 Target, uint256 Balance){
+    function detailsProject() public view returns (string memory Name,  address Starter, uint256 Target, uint256 Balance){
         Name = projectName;
+        Starter = owner();
         Target = fundTarget;
         Balance = currentBalance;
-        return (Name, Target, Balance);
+        return (Name, Starter, Target, Balance);
     }
 
     //How to see these variables when calling function?
 
     //function for returning the funds
     function withdrawFunds(uint amount) public returns(bool success) { 
-        require(isStopped) // supporters can withdraw if funding stopped
+        require(isStopped); // supporters can withdraw if funding stopped
         require(userDeposit[supporter] >= amount);// guards up front
         userDeposit[supporter] -= amount;         // optimistic accounting
         supporter.transfer(amount);            // transfer
@@ -99,14 +98,13 @@ contract CampaignBalance is Ownable {
         }
  
 
-    function payOut(uint amount) public returns(bool success) {
-        require(msg.sender == projectStarter);
+    function payOut(uint amount) public onlyOwner returns(bool success) {
+        require(currentBalance >= amount);
         require(fundingEndTime < block.timestamp);
         require(!isStopped);
         
-        uint fundAmount = currentBalance;
-        currentBalance = 0;
-        projectStarter.transfer(amount);
+        currentBalance -= amount;
+        payable(owner()).transfer(amount);
         return true;
     }
 
