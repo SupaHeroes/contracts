@@ -26,8 +26,8 @@ contract Project is Ownable {
     uint256 projectEndTime;
     //is the project initialized succesful?
     bool isInitialized;
-    //address of supporter
-    address payable public supporter;
+    //amount of supporter
+    uint256 amountUser;
 
     //put owner in constructor to use for initializing project
     constructor(
@@ -55,7 +55,7 @@ contract Project is Ownable {
         require(fundingEndTime > block.timestamp, "Funding ended");
         require(currentBalance + amount < fundTarget, "amount higher than fund target");
 
-        userDeposit[supporter] += amount;
+        userDeposit[msg.sender] += amount;
         currentBalance += amount;
     }
 
@@ -81,10 +81,11 @@ contract Project is Ownable {
     //How to see these variables when calling function?
 
     //function for returning the funds
-    function withdrawFunds(uint amount) public returns(bool success) {   
-        require(userDeposit[supporter] >= amount);// guards up front
-        userDeposit[supporter] -= amount;         // optimistic accounting
-        supporter.transfer(amount);            // transfer
+    function withdrawFunds() public returns(bool success) {   
+        require(userDeposit[msg.sender] >= 0);// guards up front
+        amountUser = userDeposit[msg.sender];
+        userDeposit[msg.sender] -= userDeposit[msg.sender];         // optimistic accounting
+        payable(msg.sender).transfer(amountUser);            // transfer
         return true;
         }
  
