@@ -4,8 +4,12 @@ pragma solidity ^0.8.6;
 import "OpenZeppelin/openzeppelin-contracts@4.3.0/contracts/access/Ownable.sol";
 import "./Project.sol";
 
+
+
 contract Projectstarter is Ownable {
+    address newAddress;
     Project[] public projects;
+    event ProjectCreated(address newAddress);
     function createProject(
         string memory _projectName, 
         address payable _projectStarter, 
@@ -21,5 +25,6 @@ contract Projectstarter is Ownable {
             _projectEndTime            
         );
         projects.push(project);
+        emit ProjectCreated(newAddress);
     }
 }
